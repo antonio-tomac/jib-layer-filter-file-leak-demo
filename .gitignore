@@ -1,0 +1,11 @@
+.classpath
+.project
+.settings/*
+**/target/*
+*.iml
+.idea
+/.settings
+/target
+**/*.class
+**/out.log
+.dcignore

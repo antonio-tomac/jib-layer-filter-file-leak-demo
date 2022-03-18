@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.tomac</groupId>
+    <artifactId>jib-layer-filter-file-leak-demo</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+
+    <packaging>pom</packaging>
+
+    <properties>
+        <java.version>11</java.version>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <docker.skipBuild>true</docker.skipBuild>
+        <docker.mainClass>none</docker.mainClass>
+        <docker.toImage>${project.artifactId}:${project.version}</docker.toImage>
+        <docker.jib.3rdparty-dependencies.pattern>**/*.jar</docker.jib.3rdparty-dependencies.pattern>
+        <docker.jib.snapshot-dependencies.pattern>**/*SNAPSHOT.jar</docker.jib.snapshot-dependencies.pattern>
+        <docker.jib.acme-dependencies.pattern>**/*acme*.jar</docker.jib.acme-dependencies.pattern>
+        <docker.jib.app-libs.pattern>**/${project.parent.artifactId}*.jar</docker.jib.app-libs.pattern>
+        <docker.jib.app-classes.pattern>**/classes/**</docker.jib.app-classes.pattern>
+        <docker.jib.app-resources.pattern>**/resources/**</docker.jib.app-resources.pattern>
+
+    </properties>
+
+    <modules>
+        <module>shared-lib</module>
+        <module>service-a</module>
+        <module>service-b</module>
+    </modules>
+
+    <build>
+        <plugins>
+
+            <plugin>
+                <groupId>com.google.cloud.tools</groupId>
+                <artifactId>jib-maven-plugin</artifactId>
+                <version>3.1.2</version>
+
+                <dependencies>
+                    <dependency>
+                        <groupId>com.google.cloud.tools</groupId>
+                        <artifactId>jib-layer-filter-extension-maven</artifactId>
+                        <version>0.2.0</version>
+                    </dependency>
+                </dependencies>
+
+                <configuration>
+                    <skip>${docker.skipBuild}</skip>
+                    <from>
+                        <image>openjdk:11.0.12-oracle</image>
+                    </from>
+                    <to>
+                        <image>${docker.toImage}</image>
+                    </to>
+                    <container>
+                        <appRoot>/opt/app</appRoot>
+                        <mainClass>${docker.mainClass}</mainClass>
+                    </container>
+
+                    <pluginExtensions>
+                        <pluginExtension>
+                            <implementation>com.google.cloud.tools.jib.maven.extension.layerfilter.JibLayerFilterExtension</implementation>
+                            <configuration implementation="com.google.cloud.tools.jib.maven.extension.layerfilter.Configuration">
+                                <filters>
+                                    <filter>
+                                        <glob>${docker.jib.3rdparty-dependencies.pattern}</glob>
+                                        <toLayer>3rd party libraries</toLayer>
+                                    </filter>
+                                    <filter>
+                                        <glob>${docker.jib.acme-dependencies.pattern}</glob>
+                                        <toLayer>ACME libraries</toLayer>
+                                    </filter>
+                                    <filter>
+                                        <glob>${docker.jib.snapshot-dependencies.pattern}</glob>
+                                        <toLayer>All snapshot libraries</toLayer>
+                                    </filter>
+                                    <filter>
+                                        <glob>${docker.jib.app-libs.pattern}</glob>
+                                        <toLayer>App libraries</toLayer>
+                                    </filter>
+                                    <filter>
+                                        <glob>${docker.jib.app-classes.pattern}</glob>
+                                        <toLayer>App classes</toLayer>
+                                    </filter>
+                                    <filter>
+                                        <glob>${docker.jib.app-resources.pattern}</glob>
+                                        <toLayer>App resources</toLayer>
+                                    </filter>
+                                </filters>
+                            </configuration>
+                        </pluginExtension>
+                    </pluginExtensions>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>dockerBuild</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+        </plugins>
+    </build>
+
+
+</project>
